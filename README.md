@@ -1,4 +1,17 @@
-# AD CS Certificate Request Tool
+# PowerShell Certificate Management Scripts
+
+A collection of robust, interactive PowerShell scripts for managing and troubleshooting SSL/TLS certificates in enterprise environments.
+
+## Scripts Included
+
+| Script | Description |
+|--------|-------------|
+| `Request-ADCSCertificate.ps1` | Request certificates from an AD CS Enterprise CA |
+| `Get-CertificateInfo.ps1` | Analyze SSL/TLS certificates from websites |
+
+---
+
+# Request-ADCSCertificate.ps1
 
 A robust, interactive PowerShell script for requesting certificates from an Active Directory Certificate Services (AD CS) Enterprise CA.
 
@@ -179,12 +192,236 @@ Get-ADObject -Filter {objectClass -eq 'pKICertificateTemplate' -and cn -eq 'Inte
     Select-Object -ExpandProperty Access
 ```
 
+---
+
+# Get-CertificateInfo.ps1
+
+An interactive PowerShell script that analyzes SSL/TLS certificates from websites, providing comprehensive information for troubleshooting certificate issues.
+
+## Overview
+
+This script connects to a specified website, retrieves the SSL/TLS certificate, and generates a detailed analysis report. It's designed for system administrators who need to quickly diagnose certificate-related problems such as expiration, hostname mismatches, chain issues, or weak cryptography.
+
+## Requirements
+
+### System Requirements
+
+- Windows 10/11 or Windows Server 2016+
+- PowerShell 5.1 or later
+- Network connectivity to the target website
+
+### No Special Permissions Required
+
+This script does not require administrator privileges as it only makes outbound HTTPS connections.
+
+## Features
+
+- **Certificate Details**: Subject, issuer, serial number, thumbprint, version
+- **Validity Analysis**: Expiration status with days remaining, color-coded warnings
+- **Subject Alternative Names**: Full list of DNS names and IP addresses
+- **Key Information**: Algorithm, key size, signature algorithm
+- **Key Usage**: Key Usage and Enhanced Key Usage extensions
+- **TLS Connection Details**: Protocol version, cipher suite, key exchange
+- **Certificate Chain**: Full chain from leaf to root with validation status
+- **Troubleshooting Checklist**: Automated pass/fail checks for common issues
+- **Issue Detection**: Automatic identification of hostname mismatches, expiration, weak crypto
+
+## Usage
+
+### Running the Script
+
+1. Open PowerShell (administrator not required)
+
+2. Navigate to the script directory:
+   ```powershell
+   cd "C:\Path\To\Scripts"
+   ```
+
+3. Execute the script:
+   ```powershell
+   .\Get-CertificateInfo.ps1
+   ```
+
+### Interactive Prompts
+
+| Prompt | Description | Examples |
+|--------|-------------|----------|
+| **Target Website** | The website to analyze | `www.example.com`, `https://example.com:8443`, `10.0.0.1:443` |
+| **Output Option** | Where to send the report | `1` = Terminal only, `2` = Terminal + Desktop file |
+
+### Input Formats Supported
+
+The script accepts flexible input formats:
+
+```
+www.example.com           → Connects to www.example.com:443
+https://example.com       → Connects to example.com:443
+example.com:8443          → Connects to example.com:8443
+https://example.com:8443  → Connects to example.com:8443
+192.168.1.100             → Connects to 192.168.1.100:443
+```
+
+### Example Session
+
+```
+================================================================
+  SSL/TLS Certificate Analyzer
+================================================================
+
+This tool retrieves and analyzes SSL/TLS certificates from websites
+to help troubleshoot certificate-related issues.
+
+Enter the target website (e.g., 'www.example.com' or 'https://example.com:8443'): www.github.com
+
+Target: www.github.com:443
+
+Output Options:
+  1. Display in terminal only
+  2. Display in terminal AND save to Desktop
+
+Select output option (1 or 2): 2
+
+Connecting to www.github.com:443...
+Certificate retrieved successfully.
+
+================================================================================
+  SSL/TLS CERTIFICATE ANALYSIS REPORT
+  Generated: 2026-01-15 10:30:45
+================================================================================
+
+  Target: www.github.com:443
+
+--------------------------------------------------------------------------------
+  CERTIFICATE OVERVIEW
+--------------------------------------------------------------------------------
+
+  Subject:          CN=github.com
+  Issuer:           CN=DigiCert TLS RSA SHA256 2020 CA1, O=DigiCert Inc, C=US
+  Serial Number:    0A1B2C3D4E5F...
+  Thumbprint:       ABC123DEF456...
+  Version:          V3
+
+--------------------------------------------------------------------------------
+  VALIDITY PERIOD
+--------------------------------------------------------------------------------
+
+  Status:           VALID
+  Not Before:       2025-03-15 00:00:00 UTC
+  Not After:        2026-03-15 23:59:59 UTC
+  Total Validity:   365 days
+  Days Since Issue: 306 days
+  Days Remaining:   59 days
+
+... [continued output] ...
+
+================================================================================
+  END OF REPORT
+================================================================================
+
+================================================================
+  Report saved to: C:\Users\Admin\Desktop\CertReport_www.github.com_20260115_103045.txt
+================================================================
+```
+
+## Report Sections
+
+### Certificate Overview
+Basic certificate identification including subject, issuer, serial number, and thumbprint.
+
+### Validity Period
+Expiration analysis with color-coded status:
+- **Green (VALID)**: More than 90 days remaining
+- **Yellow (ATTENTION)**: 31-90 days remaining
+- **Yellow (EXPIRING SOON)**: 30 days or less remaining
+- **Red (EXPIRED)**: Certificate has expired
+
+### Subject Alternative Names (SANs)
+Complete list of hostnames and IP addresses covered by the certificate.
+
+### Key Information
+Cryptographic details including public key algorithm, key size, and signature algorithm.
+
+### TLS Connection Details
+Information about the negotiated TLS session:
+- Protocol version (TLS 1.2, TLS 1.3, etc.)
+- Cipher algorithm and strength
+- Hash algorithm
+- Key exchange mechanism
+
+### Certificate Chain
+Full trust chain from the leaf certificate to the root CA, including:
+- Each certificate's subject and issuer
+- Expiration dates
+- Thumbprints
+- Chain validation status
+
+### Troubleshooting Checklist
+Automated checks with pass/fail indicators:
+- `[PASS]` Hostname matches certificate
+- `[PASS]` Certificate is not expired
+- `[PASS]` Certificate chain is valid
+- `[PASS]` TLS 1.2 or higher in use
+- `[PASS]` Key size is 2048 bits or greater
+
+### Common Issues
+Automatic detection and guidance for:
+- Hostname mismatches
+- Expired or expiring certificates
+- Incomplete certificate chains
+- Outdated TLS versions
+- Weak key sizes
+- Deprecated signature algorithms
+
+## Output File
+
+When option 2 is selected, the report is saved to the user's Desktop with the naming convention:
+
+```
+CertReport_<hostname>_<timestamp>.txt
+```
+
+Example: `CertReport_www.github.com_20260115_103045.txt`
+
+## Troubleshooting
+
+### Connection Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| Connection timed out | Host unreachable | Verify hostname, check firewall rules |
+| No such host | DNS resolution failed | Check DNS settings, verify hostname spelling |
+| Connection refused | Port not listening | Verify the correct port, ensure HTTPS is enabled |
+| SSL handshake failed | TLS incompatibility | Server may require specific TLS version or cipher |
+
+### Common Scenarios
+
+**Scenario: Browser shows certificate warning but you need details**
+```powershell
+.\Get-CertificateInfo.ps1
+# Enter the problematic URL to see exactly what's wrong
+```
+
+**Scenario: Check certificate before it's deployed to production**
+```powershell
+.\Get-CertificateInfo.ps1
+# Enter the staging server URL to validate the certificate
+```
+
+**Scenario: Verify certificate after renewal**
+```powershell
+.\Get-CertificateInfo.ps1
+# Compare the new thumbprint and expiration date
+```
+
+---
+
 ## Security Considerations
 
-- Run the script with the minimum required privileges
+- Run scripts with the minimum required privileges
 - Audit certificate requests through CA logs
 - Implement approval workflows for sensitive certificate templates
 - Regularly review template permissions and enrollment activity
+- Use these tools as part of regular certificate lifecycle management
 
 ## License
 
